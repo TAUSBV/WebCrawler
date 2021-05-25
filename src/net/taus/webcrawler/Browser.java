@@ -86,6 +86,8 @@ public class Browser {
 		this.browser = prop.getProperty("browser");
 		this.browserBin = Util.getDriver(this.browser);
 
+		System.out.println(this.browserBin);
+
 		this.outputPath = prop.getProperty("output.path", ".");
 
 		this.agent = prop.getProperty("crawl.agent", null);
