@@ -39,6 +39,8 @@ public class Crawler {
 	static FSDirectory index = null;
 	static IndexWriter indexWriter = null;
 
+	static boolean retry = false;
+
 	public static void main(String args[]) throws Exception {
 		
 		readCommandLineArguments(args);		
@@ -77,9 +79,11 @@ public class Crawler {
 	public static void readCommandLineArguments(String args[]) throws ParseException, FileNotFoundException, IOException {
 		Options options = new Options();
 		options.addOption("c", "config-file", true, "Path to the configuration file, [default crawler.properties]");
+		options.addOption("r", "retry-errors", true, "Retry urls with errors in previous runs");
 		CommandLineParser parser = new DefaultParser();
 		CommandLine cmd = parser.parse(options, args);
-		String propertiesFile = cmd.getOptionValue("c", "crawler.properties");		
+		String propertiesFile = cmd.getOptionValue("c", "crawler.properties");
+		Crawler.retry = Boolean.parseBoolean(cmd.getOptionValue("r", "false"));
 		prop = new Properties();
 		prop.load(new FileReader(propertiesFile));		
 	}
@@ -235,6 +239,16 @@ public class Crawler {
 			Document doc = searcher.doc(scoreDoc.doc);
 			String url = doc.get("URL");
 			urls.add(new Link(url, 0));
+		}
+		if(Crawler.retry) {
+			term = new Term("STATUS", "ERROR");
+			query = new TermQuery(term);
+			docs = searcher.search(query, Integer.MAX_VALUE);
+			for (ScoreDoc scoreDoc : docs.scoreDocs) {
+				Document doc = searcher.doc(scoreDoc.doc);
+				String url = doc.get("URL");
+				urls.add(new Link(url, 0));
+			}
 		}
 		return urls;
 	}
