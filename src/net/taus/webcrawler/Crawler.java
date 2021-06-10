@@ -107,11 +107,11 @@ public class Crawler {
 						.forEach(url -> {
 							String u = url.trim();
 							URLs_ToVisit_keys.add(u);
-							URLs_ToVisit.add(new Link(u, 0));
+							URLs_ToVisit.add(new Link(u, null,0));
 						});
 			} else {
 				String u = prop.getProperty("crawl.starting.url").trim();
-				Link first = new Link(u, 0);
+				Link first = new Link(u, null,0);
 				URLs_ToVisit_keys.add(u);
 				URLs_ToVisit.add(first);
 				persistURLStatus(first, "QUEUED");
@@ -204,7 +204,10 @@ public class Crawler {
 		f.setStored(true);
 		f.setTokenized(false);
 		doc.add(new Field("URL", link.getURL(), f));
+		if(link.getParent()!=null)
+			doc.add(new Field("PARENT", link.getParent(), f));
 		doc.add(new Field("STATUS", status, f));
+		doc.add(new Field("DEPTH", "" + link.getDepth(), f));
 		try {
 			indexWriter.updateDocument(new Term("URL", link.getURL()), doc);
 			indexWriter.commit();
@@ -238,7 +241,9 @@ public class Crawler {
 		for (ScoreDoc scoreDoc : docs.scoreDocs) {
 			Document doc = searcher.doc(scoreDoc.doc);
 			String url = doc.get("URL");
-			urls.add(new Link(url, 0));
+			int depth = Integer.parseInt(doc.get("DEPTH"));
+			String parent = doc.get("PARENT");
+			urls.add(new Link(url, parent, depth));
 		}
 		if(Crawler.retry) {
 			term = new Term("STATUS", "ERROR");
@@ -247,7 +252,9 @@ public class Crawler {
 			for (ScoreDoc scoreDoc : docs.scoreDocs) {
 				Document doc = searcher.doc(scoreDoc.doc);
 				String url = doc.get("URL");
-				urls.add(new Link(url, 0));
+				int depth = Integer.parseInt(doc.get("DEPTH"));
+				String parent = doc.get("PARENT");
+				urls.add(new Link(url, parent, depth));
 			}
 		}
 		return urls;

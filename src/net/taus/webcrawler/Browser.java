@@ -1,37 +1,18 @@
 package net.taus.webcrawler;
 
-import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-
-import org.apache.commons.lang3.StringUtils;
+import com.google.common.io.Files;
 import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpHead;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.openqa.selenium.By;
-import org.openqa.selenium.Dimension;
-import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.Keys;
 import org.openqa.selenium.NoSuchElementException;
-import org.openqa.selenium.Proxy;
-import org.openqa.selenium.StaleElementReferenceException;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
+import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.interactions.Actions;
-import org.openqa.selenium.logging.LogEntries;
-import org.openqa.selenium.logging.LogEntry;
 import org.openqa.selenium.logging.LogType;
 import org.openqa.selenium.logging.LoggingPreferences;
-import org.openqa.selenium.logging.Logs;
 import org.openqa.selenium.phantomjs.PhantomJSDriver;
 import org.openqa.selenium.remote.CapabilityType;
 import org.openqa.selenium.remote.DesiredCapabilities;
@@ -39,7 +20,11 @@ import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
-import com.google.common.io.Files;
+import java.io.*;
+import java.net.URL;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 
 public class Browser {
 
@@ -117,9 +102,14 @@ public class Browser {
 			throw new HttpException("Response Code is " + headers.get("status"));
 		}
 
-		if(headers.get("Content-Type").equalsIgnoreCase("application/pdf")) {
+		if(headers.get("Content-Type").toLowerCase().contains("application/pdf")) {
 			System.out.println("PDF: " + urlString);
 			downloadPDF(urlString);
+			return;
+		}
+
+		if(!(headers.get("Content-Type").toLowerCase().contains("text")
+				|| headers.get("Content-Type").toLowerCase().contains("html"))) {
 			return;
 		}
 
@@ -210,7 +200,7 @@ public class Browser {
 					}
 					//System.out.println(href);
 					alreadySeenNormal.add(href);
-					Crawler.addLink(new Link(href, link.depth + 1));
+					Crawler.addLink(new Link(href, link.getURL(), link.depth + 1));
 				} catch(Exception e) {
 					continue;
 				}
@@ -239,7 +229,7 @@ public class Browser {
 							alreadySeenAjax.add(href);
 							System.out.println("Click :: " + href);
 							try {
-								actions.moveToElement(element).keyDown(Keys.COMMAND).click(element).keyUp(Keys.COMMAND).build().perform();
+								actions.moveToElement(element).click(element).build().perform();
 								driver.manage().timeouts().implicitlyWait(this.implicitTimeout, TimeUnit.SECONDS);
 							} catch (Exception e) {
 								continue;
@@ -274,7 +264,7 @@ public class Browser {
 							}
 							//System.out.println(href);
 							alreadySeenNormal.add(href);
-							Crawler.addLink(new Link(href, link.depth + 1));				
+							Crawler.addLink(new Link(href, link.getParent(), link.depth + 1));
 						}				
 					} catch(Exception e) {
 					}
@@ -309,7 +299,7 @@ public class Browser {
 			}
 			ChromeOptions chromeOptions = new ChromeOptions();
 			chromeOptions.setAcceptInsecureCerts(true);
-			chromeOptions.addArguments("--headless");
+			//chromeOptions.addArguments("--headless");
 			chromeOptions.addArguments("--no-sandbox");
 			chromeOptions.addArguments("--ignore-ssl-errors=true");
 			chromeOptions.addArguments("--ssl-protocol=any");
@@ -360,11 +350,19 @@ public class Browser {
 			e.printStackTrace();
 		}
 		String contentType = response.getHeaders("Content-Type")[0].getValue();
-		String contentLength = response.getHeaders("Content-Length")[0].getValue();
+		String contentLength = "0";
+		String contentLanguage = null;
+		try {
+			contentLength = response.getHeaders("Content-Length")[0].getValue();
+			contentLanguage = response.getHeaders("Content-Language")[0].getValue();
+		} catch(Exception e){}
 		String code = String.valueOf(response.getStatusLine().getStatusCode());
 		Map<String, String> headers = new HashMap<>();
 		headers.put("Content-Type", contentType);
 		headers.put("Content-Length", contentLength);
+		if(contentLanguage!=null) {
+			headers.put("Content-Language", contentLanguage);
+		}
 		headers.put("status", code);
 		return headers;
 	}
@@ -388,16 +386,6 @@ public class Browser {
 	@Override
 	public void finalize() {
 		try {
-/*			Logs logs = driver.manage().logs();
-			LogEntries logEntries = logs.get(LogType.DRIVER);
-			PrintWriter logFileWriter = null;
-			File logFile = new File(this.outputPath + ".log");
-			logFileWriter = new PrintWriter(new OutputStreamWriter(new FileOutputStream(logFile), "UTF-8"), true);
-			for (LogEntry logEntry : logEntries) {
-				logFileWriter
-				.println(logEntry.getTimestamp() + "|" + logEntry.getLevel() + "|" + logEntry.getMessage());
-			}
-			logFileWriter.close();*/
 			driver.quit();
 		} catch (Exception e) {
 			e.printStackTrace();

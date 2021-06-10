@@ -21,36 +21,42 @@ public class LinkExtractor {
 		List<WebElement> links = driver.findElements(By.tagName("a"));
 		if(crawlFollowAjax) {
 			for (WebElement element : links) {
-				String href = element.getAttribute("href");
-				if(href!=null) {
-					if(!Crawler.urlFilters.execute(href)) continue;
-					String text = element.getText();
-					if(text==null || text.isEmpty()) continue;
-					try {
-						System.out.println("No HREF Link :: " + text);
-						actions.moveToElement(element).click().build().perform();
-						driver.manage().timeouts().implicitlyWait(5, TimeUnit.SECONDS);
-					} catch (Exception e) {
-						System.out.println("Exception :: " + href);
-						continue;
-					}
-					ArrayList<String> tabs = new ArrayList<String>(driver.getWindowHandles());
-					if (tabs.size() > 1) {
-						driver.switchTo().window(tabs.get(1));
-						driver.close();
-						driver.switchTo().window(tabs.get(0));
-						linksNormal.add(element);
-						System.out.println("Normal Link :: " + href);
+				try {
+					String href = element.getAttribute("href");
+					if (href != null) {
+						if (!Crawler.urlFilters.execute(href)) continue;
+						String text = element.getText();
+						if (text == null || text.isEmpty()) continue;
+						try {
+							System.out.println("No HREF Link :: " + text);
+							actions.moveToElement(element).click().build().perform();
+							driver.manage().timeouts().implicitlyWait(5, TimeUnit.SECONDS);
+						} catch (Exception e) {
+							System.out.println("Exception :: " + href);
+							continue;
+						}
+						ArrayList<String> tabs = new ArrayList<String>(driver.getWindowHandles());
+						if (tabs.size() > 1) {
+							driver.switchTo().window(tabs.get(1));
+							driver.close();
+							driver.switchTo().window(tabs.get(0));
+							linksNormal.add(element);
+							System.out.println("Normal Link :: " + href);
+						} else {
+							linksAjax.add(element);
+							System.out.println("JS Link :: " + href);
+						}
 					} else {
-						linksAjax.add(element);
-						System.out.println("JS Link :: " + href);
+						String text = element.getText();
+						if (text != null && !text.isEmpty()) {
+							linksAjax.add(element);
+							System.out.println("JS Link :: " + element.getText());
+						}
 					}
-				} else {
-					String text = element.getText();
-					if(text!=null && !text.isEmpty()) {
-						linksAjax.add(element);
-						System.out.println("JS Link :: " + element.getText());
-					}
+
+				} catch (RuntimeException e) {
+					//e.printStackTrace();
+					continue;
 				}
 
 			}

@@ -1,12 +1,14 @@
 package net.taus.webcrawler;
 
 public class Link {
-	
+
+	String parent = null;
 	String URL = null;
 	int depth = 0;
 	
-	public Link(String URL, int depth) {
+	public Link(String URL, String parent, int depth) {
 		this.URL = URL;
+		this.parent = parent;
 		this.depth = depth;
 	}
 	
@@ -16,6 +18,10 @@ public class Link {
 	
 	public int getDepth() {
 		return this.depth;
+	}
+
+	public String getParent() {
+		return this.parent;
 	}
 
 }
