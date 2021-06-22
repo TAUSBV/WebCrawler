@@ -39,6 +39,7 @@ public class Browser {
 	private String languagesLookup = null;
 	private By languagesLookup_By = null;
 	private String outputPath = null;
+	private String browserBaseLocation = null;
 	private String browser = null;
 	private String browserBin = null;
 	private int crawlDepth = 0;
@@ -75,8 +76,9 @@ public class Browser {
 			this.elementLookup_By = By.xpath(this.languagesLookup);
 		}
 
-		this.browser = prop.getProperty("browser");
-		this.browserBin = Util.getDriver(this.browser);
+		this.browserBaseLocation = prop.getProperty("browser.base.location");
+		this.browser = prop.getProperty("browser.name");
+		this.browserBin = Util.getDriver(this.browserBaseLocation, this.browser);
 
 		System.out.println(this.browserBin);
 
