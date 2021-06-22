@@ -36,6 +36,8 @@ public class Browser {
 	private String elementFrame = null;
 	private String elementLookup = null;
 	private By elementLookup_By = null;
+	private String languagesLookup = null;
+	private By languagesLookup_By = null;
 	private String outputPath = null;
 	private String browser = null;
 	private String browserBin = null;
@@ -66,6 +68,11 @@ public class Browser {
 			this.elementLookup_By = By.tagName("body");
 		} else {
 			this.elementLookup_By = By.xpath(this.elementLookup);
+		}
+
+		this.languagesLookup = prop.getProperty("element.languages", null);
+		if(languagesLookup != null) {
+			this.elementLookup_By = By.xpath(this.languagesLookup);
 		}
 
 		this.browser = prop.getProperty("browser");
@@ -299,7 +306,7 @@ public class Browser {
 			}
 			ChromeOptions chromeOptions = new ChromeOptions();
 			chromeOptions.setAcceptInsecureCerts(true);
-			//chromeOptions.addArguments("--headless");
+			chromeOptions.addArguments("--headless");
 			chromeOptions.addArguments("--no-sandbox");
 			chromeOptions.addArguments("--ignore-ssl-errors=true");
 			chromeOptions.addArguments("--ssl-protocol=any");

@@ -3,6 +3,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.Executors;
@@ -88,7 +89,7 @@ public class Crawler {
 		prop.load(new FileReader(propertiesFile));		
 	}
 	
-	public static void initializeURLs() {
+	public static void initializeURLs() throws IOException {
 		URLs_ToVisit_keys = new HashSet<>();
 		URLs_ToVisit = new ArrayList<>();
 		try {
@@ -102,7 +103,14 @@ public class Crawler {
 			URLs_Visited = new HashSet();
 		}
 		if (URLs_ToVisit.isEmpty()) {
-			if (prop.containsKey("crawl.starting.url.list")) {
+			if (prop.containsKey("crawl.starting.url.path")) {
+				Files.readAllLines(Paths.get(prop.getProperty("crawl.starting.url.path")))
+						.forEach(url -> {
+							String u = url.trim();
+							URLs_ToVisit_keys.add(u);
+							URLs_ToVisit.add(new Link(u, null, 0));
+						});
+			} else if (prop.containsKey("crawl.starting.url.list")) {
 				Arrays.stream(prop.getProperty("crawl.starting.url.list").split("\\s"))
 						.forEach(url -> {
 							String u = url.trim();
