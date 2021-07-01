@@ -107,22 +107,18 @@ public class Crawler {
 				Files.readAllLines(Paths.get(prop.getProperty("crawl.starting.url.path")))
 						.forEach(url -> {
 							String u = url.trim();
-							URLs_ToVisit_keys.add(u);
-							URLs_ToVisit.add(new Link(u, null, 0));
+							addLink(new Link(u, null,0));
 						});
 			} else if (prop.containsKey("crawl.starting.url.list")) {
 				Arrays.stream(prop.getProperty("crawl.starting.url.list").split("\\s"))
 						.forEach(url -> {
 							String u = url.trim();
-							URLs_ToVisit_keys.add(u);
-							URLs_ToVisit.add(new Link(u, null,0));
+							addLink(new Link(u, null,0));
 						});
 			} else {
 				String u = prop.getProperty("crawl.starting.url").trim();
 				Link first = new Link(u, null,0);
-				URLs_ToVisit_keys.add(u);
-				URLs_ToVisit.add(first);
-				persistURLStatus(first, "QUEUED");
+				addLink(first);
 			}
 		}
 	}
