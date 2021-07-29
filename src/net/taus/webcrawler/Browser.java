@@ -162,10 +162,10 @@ public class Browser {
 			} else {
 				for (WebElement element : elements) {
 					String text = element.getText();
-					String html = driver.getPageSource();
 					outText.println(new String(text.getBytes("UTF8"), "UTF8"));
-					outHTML.println(new String(html.getBytes("UTF8"), "UTF8"));
 				}
+				String html = driver.getPageSource();
+				outHTML.println(new String(html.getBytes("UTF8"), "UTF8"));
 			}
 		} catch (NoSuchElementException ex) {
 			System.out.println("Element " + this.elementLookup_By.toString() + " not found.");
@@ -188,12 +188,12 @@ public class Browser {
 			
 			if(this.crawlFollowAjax) {
 				proxy.enableShortCircuit(identifier);
-				extractedLinks= LinkExtractor.extract(driver, this.crawlFollowAjax);
+				extractedLinks= LinkExtractor.extract(driver, this.elementLookup, this.crawlFollowAjax);
 				linksNormal = extractedLinks.get(0);
 				linksAjax = extractedLinks.get(1);
 				proxy.disableShortCircuit(identifier);
 			} else {
-				extractedLinks = LinkExtractor.extract(driver, this.crawlFollowAjax);
+				extractedLinks = LinkExtractor.extract(driver, this.elementLookup, this.crawlFollowAjax);
 				linksNormal = extractedLinks.get(0);				
 			}
 
@@ -258,7 +258,7 @@ public class Browser {
 						break;
 					} catch(StaleElementReferenceException e) {
 						proxy.enableShortCircuit(identifier);
-						extractedLinks = LinkExtractor.extract(driver, this.crawlFollowAjax);
+						extractedLinks = LinkExtractor.extract(driver, this.elementLookup, this.crawlFollowAjax);
 						linksNormal = extractedLinks.get(0);
 						linksAjax = extractedLinks.get(1);
 						proxy.disableShortCircuit(identifier);
