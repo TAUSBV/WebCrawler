@@ -13,12 +13,12 @@ import org.openqa.selenium.interactions.Actions;
 public class LinkExtractor {
 	
 	
-	public static List<List<WebElement>> extract(WebDriver driver, boolean crawlFollowAjax) {
+	public static List<List<WebElement>> extract(WebDriver driver, String parent, boolean crawlFollowAjax) {
 		List<WebElement> linksAjax = new ArrayList<WebElement>();
 		List<WebElement> linksNormal = new ArrayList<WebElement>();
 		Actions actions = new Actions(driver);
 		((JavascriptExecutor) driver).executeScript("var a = document.getElementsByTagName('a'); for(i=0;i<a.length;i++) a[i].setAttribute('target', '_blank');");		
-		List<WebElement> links = driver.findElements(By.tagName("a"));
+		List<WebElement> links = driver.findElements(By.xpath(parent + "//a"));
 		if(crawlFollowAjax) {
 			for (WebElement element : links) {
 				try {
