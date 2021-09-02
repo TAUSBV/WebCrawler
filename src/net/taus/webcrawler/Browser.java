@@ -25,6 +25,8 @@ import java.net.URL;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Browser {
 
@@ -51,10 +53,14 @@ public class Browser {
 	
 	private String identifier = null;
 
+	private Properties config = null;
+
 	public Browser() {
 	}
 
 	public void init(Properties prop, BrowserProxy proxy) {
+
+		this.config = prop;
 
 		this.crawlLinks = Boolean.parseBoolean(prop.getProperty("crawl.links", "false"));
 		this.crawlIgnoreQueryString = Boolean.parseBoolean(prop.getProperty("crawl.ignore.querystring", "false"));
@@ -106,6 +112,21 @@ public class Browser {
 		String urlString = link.getURL();
 		System.out.println("Loading URL: " + urlString);
 
+		By local_elementLookup_By = this.elementLookup_By;
+
+		String []lookups = config.getProperty("element.lookup.list", "").split("\\|");
+		for(String lookup : lookups) {
+			String regex = config.getProperty("element.lookup." + lookup + ".regex", "");
+			if(!regex.equals("")) {
+				Pattern p = Pattern.compile(regex);
+				Matcher matcher = p.matcher(urlString);
+				if(matcher.matches()) {
+					local_elementLookup_By = By.xpath(config.getProperty("element.lookup." + lookup, "//body"));
+					break;
+				}
+			}
+		}
+
 		Map<String, String> headers = getHeadResponse(urlString);
 		if(!headers.get("status").equals("200")) {
 			throw new HttpException("Response Code is " + headers.get("status"));
@@ -134,7 +155,22 @@ public class Browser {
 		
 		((JavascriptExecutor)driver).executeScript("this.onResourceRequested = function(request, net) {" + 
 				"net.setHeader('crawler-identifier', '" + identifier + "')" + 
-				"};");		
+				"};");
+
+
+		String []onLoadTriggers = config.getProperty("browser.onload.triggers", "").split("\\|");
+		for(String onLoadTrigger : onLoadTriggers) {
+			String regex = config.getProperty("browser.onload." + onLoadTrigger + ".regex", "");
+			if(!regex.equals("")) {
+				Pattern p = Pattern.compile(regex);
+				Matcher matcher = p.matcher(urlString);
+				if(matcher.matches()) {
+					String js = config.getProperty("browser.onload." + onLoadTrigger + ".js");
+					((JavascriptExecutor)driver).executeScript(js);
+				}
+			}
+		}
+
 
 
 		String path = getOutputPath(urlString);
@@ -154,7 +190,7 @@ public class Browser {
 			if (this.elementFrame != null) {
 				driver.switchTo().frame(driver.findElement(By.xpath(this.elementFrame)));
 			}
-			List<WebElement> elements = driver.findElements(this.elementLookup_By);
+			List<WebElement> elements = driver.findElements(local_elementLookup_By);
 			if(elements.isEmpty()) {
 				outText.close();
 				outHTML.close();
@@ -168,7 +204,7 @@ public class Browser {
 				outHTML.println(new String(html.getBytes("UTF8"), "UTF8"));
 			}
 		} catch (NoSuchElementException ex) {
-			System.out.println("Element " + this.elementLookup_By.toString() + " not found.");
+			System.out.println("Element " + local_elementLookup_By.toString() + " not found.");
 		}
 
 		outText.close();
